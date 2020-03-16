@@ -1,0 +1,37 @@
+body {
+  font-family: "Open Sans", sans-serif;
+}
+
+.container {
+  margin: 2rem;
+}
+
+.text-center {
+  text-align: center;
+}
+
+#view-count-table {
+  border: 1px solid #ccc;
+  border-collapse: collapse;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  table-layout: fixed;
+}
+
+#view-count-table tr {
+  background-color: #f8f8f8;
+  border: 1px solid #ddd;
+  padding: 0.35em;
+}
+
+#view-count-table th,
+#view-count-table td {
+  padding: 0.625em;
+}
+
+#view-count-table th {
+  font-size: 1em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
