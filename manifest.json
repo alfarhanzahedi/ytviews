@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "name": "YTViews",
     "version": "1.0",
-    "description": "YTViews stores the frequency of different videos one watches on YouTube.",
+    "description": "YT Views keeps a track of the watch frequencies of different YouTube videos!",
     "permissions": [
         "tabs"
     ],
