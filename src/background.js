@@ -62,30 +62,31 @@ function processVideoData(data) {
 }
 
 function sendVideoDataToTab(tab) {
-    db.transaction("r", db.videoViewCounts, db.videoDetails, function () {
+    db.transaction("r", db.videoViewCounts, db.videoDetails, db.videoViewHistory, function () {
 
         // Iterate over the videos in reverse order of "count".
         // That is, the most viewed video should come first!
-        db.videoViewCounts
-          .orderBy("count")
-          .reverse()
-          .each(function (videoViewCount) {
-
+        db.videoViewCounts.orderBy("count").reverse().each(function (videoViewCount) {
             // Obtain the details of the video from the database!
-            db.videoDetails
-              .get({ id: videoViewCount["id"] })
-              .then(function (videoDetail) {
+            db.videoDetails.get({ id: videoViewCount["id"] }).then(function (videoDetail) {
+                // Obtain the view history from the database.
+                db.videoViewHistory.get({ id: videoViewCount["id"] }).then(function (videoViewHistory) {
+                  // Convert to local TZ.
+                  let lastWatchedAt = videoViewHistory["duration"].at(-1)[0];
+                  let lastWatchedAtInLocalTZ = new Date(lastWatchedAt).toLocaleString()
 
-                // Finally, send the data to be displayed to the appropriate tab.
-                chrome.tabs.sendMessage(tab.id, {
-                    "action": "displayVideoData",
-                    "data": {
-                        "id": videoViewCount["id"],
-                        "title": videoDetail["title"],
-                        "url": videoDetail["url"],
-                        "count": videoViewCount["count"]
-                    }
-                });
+                  // Finally, send the data to be displayed to the appropriate tab.
+                  chrome.tabs.sendMessage(tab.id, {
+                      "action": "displayVideoData",
+                      "data": {
+                          "id": videoViewCount["id"],
+                          "title": videoDetail["title"],
+                          "url": videoDetail["url"],
+                          "count": videoViewCount["count"],
+                          "lastWatchedAt": lastWatchedAtInLocalTZ
+                      }
+                  });
+                })
             });
         });
     });
