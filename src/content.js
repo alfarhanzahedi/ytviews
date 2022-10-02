@@ -50,10 +50,10 @@ function respondToChangesInTitleTag(mutationsList, observer) {
                 "data": {
                     "id": videoID,
                     "title": videoTitle,
-                    "url": videoURL
+                    "url": videoURL,
+                    "watchedAt": new Date().toUTCString()
                 }
             })
-
         }
     }
 }
