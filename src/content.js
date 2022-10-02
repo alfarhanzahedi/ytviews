@@ -14,43 +14,77 @@ const youtubeSuffix = " - YouTube";
 function getVideoIDFromURL(url) {
     let match = (url || "").match(/v=(.+?)(&|$)/);
     return match && match[1];
-};
+}
 
-function respondToChangesInTitleTag(mutationsList, observer) {
+
+/**
+ * This function extracts and returns the notification count from a typical YouTube tab title.
+ * @param {string} title The YouTube video tab title from which the notification count is to be extracted.
+ * @returns {string} The notification count, if present, else null.
+ */
+function getNotificationCountFromVideoTitle(title) {
+    let match = (title || "").match(/^[(]\d+[)]/g);
+    return match && match[0];
+}
+
+async function respondToChangesInTitleTag(mutationsList, observer) {
+    debugger;
     for (let i = 0; i < mutationsList.length; i++) {
 
         if (mutationsList[i].type === 'childList' && mutationsList[i].addedNodes.length) {
             // We are observing the "title" tag. A change in the title text means that the user 
             // navigated to a different video or page on YouTube.
-            // Extract the title text.
-            let videoTitle = mutationsList[i].addedNodes[0]["textContent"];
-            
-            // Extract the URL of the current web page.
-            let videoURL = mutationsList[i].addedNodes[0]["baseURI"].split("&")[0];
-            
-            // Extract the video ID from the URL of the current web page.
-            let videoID = getVideoIDFromURL(mutationsList[i].addedNodes[0]["baseURI"]);
+            // Extract the title text for both, old and new video.
+            let videoTitleNew = mutationsList[i].addedNodes[0]["textContent"];
+            let videoTitleOld = mutationsList[i].removedNodes[0]["textContent"];
+
+            // Extract the URL of the current and old web page.
+            let videoURLNew = mutationsList[i].addedNodes[0]["baseURI"].split("&")[0];
+            let videoURLOld = mutationsList[i].removedNodes[0]["baseURI"].split("&")[0];
+
+            // Extract the video ID from the URL of the current and old web page.
+            let videoIDNew = getVideoIDFromURL(mutationsList[i].addedNodes[0]["baseURI"]);
+            let videoIDOld = getVideoIDFromURL(mutationsList[i].removedNodes[0]["baseURI"]);
+
 
             // If the URL does not contain any video ID in it, then it is not the URL of
             // a YouTube video! So, no need of any further processing.
-            if (videoID == null) {
+            if (videoIDNew == null) {
                 continue;
             }
-            
+
+            // Title of a tab can change if a notification is received.
+            // Example: Title changes from "Some Random Video" to "(1) Some Random Video".
+            // For such cases, view count should not be updated.
+            if (videoIDNew === videoIDOld) {
+                let notificationCountOld = getNotificationCountFromVideoTitle(videoTitleOld);
+                let notificationCountNew = getNotificationCountFromVideoTitle(videoTitleNew);
+                // There can be two cases here -
+                // 1. Notification is marked as read. The notification count is removed from the title in this scenario.
+                // 2. New notification arrives. The notification count is added to the title in this scenario.
+                if ((notificationCountOld != null && notificationCountNew == null) || (notificationCountNew != null && notificationCountOld == null)) {
+                    continue;
+                }
+            }
+
             // A typical YouTube video title is suffixed with " - YouTube". 
             // Including this suffix in the video title while storing make little sense. 
             // So, remove it!
-            if (videoTitle.endsWith(youtubeSuffix)) {
-                videoTitle = videoTitle.slice(0, videoTitle.length - youtubeSuffix.length);
+            if (videoTitleNew.endsWith(youtubeSuffix)) {
+                videoTitleNew = videoTitleNew.slice(0, videoTitleNew.length - youtubeSuffix.length);
+            }
+
+            if (videoTitleOld.endsWith(youtubeSuffix)) {
+                videoTitleOld = videoTitleOld.slice(0, videoTitleOld.length - youtubeSuffix.length);
             }
 
             // Let the background script handle the further processing (storage, etc) of the video data!
             chrome.runtime.sendMessage({
                 "action": "processVideoData",
                 "data": {
-                    "id": videoID,
-                    "title": videoTitle,
-                    "url": videoURL,
+                    "id": videoIDNew,
+                    "title": videoTitleNew,
+                    "url": videoURLNew,
                     "watchedAt": new Date().toUTCString()
                 }
             })
@@ -63,5 +97,8 @@ function respondToChangesInTitleTag(mutationsList, observer) {
 // YouTube.
 new MutationObserver(respondToChangesInTitleTag).observe(
     document.getElementsByTagName("title")[0],
-    { childList: true }
+    {
+        childList: true,
+        attributeOldValue: true
+    }
 );
