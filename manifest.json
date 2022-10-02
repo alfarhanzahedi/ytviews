@@ -1,5 +1,5 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "YTViews",
     "version": "1.0",
     "description": "YT Views keeps a track of the watch frequencies of different YouTube videos!",
@@ -20,13 +20,9 @@
         }
     ],
     "background": {
-        "scripts": [
-            "lib/dexie.js",
-            "src/background.js"
-        ],
-        "persistent": false
-    },
-    "browser_action": {
+    	"service_worker": "worker_wrapper.js"
+  	},
+    "action": {
         "default_icon": {
             "16": "images/ytviews16.png",
             "32": "images/ytviews32.png",

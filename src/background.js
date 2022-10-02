@@ -80,7 +80,7 @@ function handleTabUpdate(tabId, changeInfo, tab) {
 }
 
 // Listen for "click" on the extension's icon in the chrome toolbar!
-chrome.browserAction.onClicked.addListener(function () {
+chrome.action.onClicked.addListener(function () {
     // Create a new tab to display the data of different videos as recorded
     // and stored in the database.
     // Note: The data is to be sent to the newly created tab only when the DOM tree has 
