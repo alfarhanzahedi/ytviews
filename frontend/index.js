@@ -13,6 +13,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             <tr>
                 <td><a href="${message["data"]["url"]}" target="_blank"> ${message["data"]["title"]}</a></td>
                 <td>${message["data"]["count"]}</td>
+                <td>${message["data"]["lastWatchedAt"]}</td>
             </tr>
             `
         );
