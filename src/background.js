@@ -16,25 +16,48 @@ db.version(1).stores({
 
 function processVideoData(data) {
     // Check if a record corresponding to the current video (identifiable by data["id"]) exists.
-    db.videoViewCounts.get(data["id"]).then(function (dataFromDB) {
-        
+    db.videoViewCounts.get(data["id"]).then(function (dataFromDBForViewCount) {
         // If no record exists, create the necessary records in different stores!
-        if (dataFromDB === undefined) {
-            
-            // Create a record in the  "videoViewCounts" store (with inital count as 1).
+        if (dataFromDBForViewCount === undefined) {
+            // Create a record in the  "videoViewCounts" store (with initial count as 1).
             db.videoViewCounts.add({ id: data["id"], count: 1 });
             
             // Create a record in the "videoDetails" store.
-            db.videoDetails.add({ id: data["id"], title: data["title"], url: data["url"] });
-        
-        } else {
-            
-            // If a record exists, just increment the "count" of the current video in the
-            // "videoViewCounts" store.
-            db.videoViewCounts.put({ id: data["id"], count: dataFromDB["count"] + 1 });
-        
-        }
+            db.videoDetails.add({
+                id: data["id"],
+                title: data["title"],
+                url: data["url"]
+            });
 
+            db.videoViewHistory.add({
+               id: data["id"],
+               // Adding the end-time as N/A for now.
+               // It will be taken up separately as part of https://github.com/alfarhanzahedi/ytviews/issues/6.
+               duration: [[data["watchedAt"], "N/A"]]
+            });
+        } else {
+            // If a record exists, just increment the "count" of the current video in the
+            // "videoViewCounts" store and add the view history.
+            db.videoViewCounts.put({
+                id: data["id"],
+                count: dataFromDBForViewCount["count"] + 1
+            });
+
+            db.videoViewHistory.get(data["id"]).then(function (dataFromDBForViewHistory) {
+                if (dataFromDBForViewHistory === undefined) {
+                    db.videoViewHistory.add({
+                        id: data["id"],
+                        duration: [[data["watchedAt"], "N/A"]],
+                    });
+                } else {
+                    dataFromDBForViewHistory["duration"].push([data["watchedAt"], "N/A"])
+                    db.videoViewHistory.put({
+                        id: data["id"],
+                        duration: dataFromDBForViewHistory["duration"]
+                    })
+                }
+            });
+        }
     });
 }
 
